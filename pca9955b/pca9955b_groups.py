@@ -34,11 +34,9 @@ __repo__ = "https://github.com/NoelAnderson/CircuitPython_PCA9955B.git"
 from micropython import const
 
 try:
-    from typing import NoReturn
+    from . import pca9955b as PCA9955
 except ImportError:
-    pass
-
-from . import pca9955b as PCA9955
+    import pca9955b as PCA9955
 
 # Register map & bit positions for Gropup functions of PCA9955B
 
@@ -104,7 +102,7 @@ class Group:
         return self._index
 
     @id.setter
-    def id(self, value: int) -> NoReturn:  # noqa PLR6301
+    def id(self, value: int):  # noqa PLR6301
         raise AttributeError("Id is read-only")
 
     @property

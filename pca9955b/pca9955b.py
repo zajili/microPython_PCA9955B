@@ -32,22 +32,14 @@ __repo__ = "https://github.com/NoelAnderson/CircuitPython_PCA9955B.git"
 
 import time
 
-import microcontroller
 from micropython import const
+
+from machine import Pin, I2C
 
 try:
-    from types import TracebackType
-    from typing import NoReturn, Optional, Type
-
-    from busio import I2C
+    from .pca9955b_groups import Groups
 except ImportError:
-    pass
-
-from adafruit_bus_device import i2c_device
-from digitalio import DigitalInOut, Direction, DriveMode
-from micropython import const
-
-from .pca9955b_groups import Groups
+    from pca9955b_groups import Groups
 
 # Register map & bit positions for PCA9955B
 
@@ -225,7 +217,7 @@ class LedChannel:
         return self._read_channel_config(_REG_EFLAG0, self._index)
 
     @error.setter
-    def error(self) -> NoReturn:  # noqa PLR6301
+    def error(self):  # noqa PLR6301
         raise AttributeError("Led Error is read-only")
 
     @property
@@ -429,8 +421,8 @@ class PCA9955:  # noqa PLR0904
         self,
         i2c: I2C,
         address: int = _PCA9955B_DEFAULT_I2C_ADDR,
-        oe_pin: Optional[microcontroller.Pin] = None,
-        reset_pin: Optional[microcontroller.Pin] = None,
+        oe_pin = None,
+        reset_pin = None,
     ) -> None:
         """
         Initialize the PCA9955B device at ``address`` on ``i2c_bus``
@@ -449,30 +441,23 @@ class PCA9955:  # noqa PLR0904
 
         :return: None
         """
-        self._device = i2c_device.I2CDevice(i2c, address)
+        # self._device = i2c_device.I2CDevice(i2c, address)
+        self._device = I2C(1, scl=Pin(3), sda=Pin(2), freq=400_000)
+        self._i2c_addr = address
         self.channels = LedChannels(self)
         self.groups = Groups(self)
         self.subaddresses = SubAddresses(self)
         self._oe = None
-        if oe_pin is not None:
-            self._oe = DigitalInOut(oe_pin)
-            self._oe.direction = Direction.OUTPUT
-            self._oe.drive_mode = DriveMode.OPEN_DRAIN
         self._reset = None
-        if reset_pin is not None:
-            self._reset = DigitalInOut(reset_pin)
-            self._reset.direction = Direction.OUTPUT
-            self._reset.drive_mode = DriveMode.OPEN_DRAIN
-            self._reset.value = True
 
     def __enter__(self) -> "PCA9955":
         return self
 
     def __exit__(
         self,
-        exception_type: Optional[Type[type]],
-        exception_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        exception_type,
+        exception_value,
+        traceback,
     ) -> None:
         return False
 
@@ -487,7 +472,7 @@ class PCA9955:  # noqa PLR0904
             self._reset.value = True
 
     @property
-    def output_enable(self) -> Optional[bool]:
+    def output_enable(self):
         """If the oe pin is tied to a GPIO then control the PCA9955 oe (output enable)."""
         if self._oe is not None:
             return not self._oe.value
@@ -499,7 +484,7 @@ class PCA9955:  # noqa PLR0904
             self._oe.value = not value
 
     @property
-    def brightness(self) -> NoReturn:
+    def brightness(self):
         """Global brightness 0 - 255. Write only"""
         raise AttributeError("brightness is write-only")
 
@@ -508,7 +493,7 @@ class PCA9955:  # noqa PLR0904
         self.write_8(_REG_PWMALL, value)
 
     @property
-    def gain(self) -> NoReturn:
+    def gain(self):
         """Global output currrent 0 - 255. Write only"""
         raise AttributeError("Output current is write-only")
 
@@ -522,7 +507,7 @@ class PCA9955:  # noqa PLR0904
         return bool(self.read_register(_REG_MODE2, mask=_1_BIT, bit_offset=_BIT_OVERTEMP))
 
     @over_temp.setter
-    def over_temp(self) -> NoReturn:  # noqa PLR6301
+    def over_temp(self):  # noqa PLR6301
         raise AttributeError("Over Temp is read-only")
 
     @property
@@ -533,7 +518,7 @@ class PCA9955:  # noqa PLR0904
         return bool(self.read_register(_REG_MODE2, mask=_1_BIT, bit_offset=_BIT_ERROR))
 
     @errors_exist.setter
-    def errors_exist(self) -> NoReturn:  # noqa PLR6301
+    def errors_exist(self):  # noqa PLR6301
         raise AttributeError("Errors Exist is read-only")
 
     @property
@@ -551,7 +536,7 @@ class PCA9955:  # noqa PLR0904
         return bool(self.read_register(_REG_MODE1, mask=_1_BIT, bit_offset=_BIT_AIF))
 
     @auto_increment_flag.setter
-    def auto_increment_flag(self, value: bool) -> NoReturn:  # noqa PLR6301
+    def auto_increment_flag(self, value: bool):  # noqa PLR6301
         raise AttributeError("AIF is read-only")
 
     @property
@@ -694,10 +679,8 @@ class PCA9955:  # noqa PLR0904
 
         :meta private:
         """
-        result = bytearray(1)
-        with self._device as i2c:
-            i2c.write(bytes([address]))
-            i2c.readinto(result)
+        self._device.writeto(self._i2c_addr, bytes([address]))
+        result = self._device.readfrom(self._i2c_addr, 1)
         # print(f"r8 - address:{address:#x} value:{result[0]:08b}")
         return result[0]
 
@@ -707,9 +690,5 @@ class PCA9955:  # noqa PLR0904
 
         :meta private:
         """
-        result = bytearray(1)
-        with self._device as i2c:
-            i2c.write(bytes([address, value]))
-            i2c.write(bytes([address]))
-            i2c.readinto(result)
+        self._device.writeto(self._i2c_addr, bytes([address, value]))
         # print(f"w8 - address:{address:#x} value:{value:08b}")
