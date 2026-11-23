@@ -1,14 +1,16 @@
 # SPDX-FileCopyrightText: Copyright (c) 2024 Noel Anderson
+# SPDX-FileCopyrightText: Copyright (c) 2026 zajili
 #
 # SPDX-License-Identifier: MIT
 """
 `pca9955b`
 ================================================================================
 
-CircuitPython helper library for the NXP 16-Channel I�C-Bus Constant-Current LED Driver
+MicroPython helper library for the NXP 16-Channel I²C-Bus Constant-Current LED Driver
 
+Based on CircuitPython_PCA9955B by Noel Anderson.
 
-* Author(s): Noel Anderson
+* Author(s): Noel Anderson, zajili
 
 Implementation Notes
 --------------------
@@ -19,16 +21,15 @@ Implementation Notes
 
 **Software and Dependencies:**
 
-* Adafruit CircuitPython firmware for the supported boards:
-  https://circuitpython.org/downloads
-
+* MicroPython firmware for the supported boards:
+  https://micropython.org/download/
 
 """
 
 # imports
 
 __version__ = "0.0.0-auto.0"
-__repo__ = "https://github.com/NoelAnderson/CircuitPython_PCA9955B.git"
+__repo__ = "https://github.com/zajili/microPython_PCA9955B.git"
 
 import time
 

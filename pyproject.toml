@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Noel Anderson
+# SPDX-FileCopyrightText: Copyright (c) 2026 zajili
 #
 # SPDX-License-Identifier: MIT
 
@@ -10,24 +11,21 @@ requires = [
 ]
 
 [project]
-name = "circuitpython-pca9955b"
-description = "CircuitPython helper library for the NXP 16-Channel I²C-Bus Constant-Current LED Driver"
+name = "micropython-pca9955b"
+description = "MicroPython helper library for the NXP 16-Channel I²C-Bus Constant-Current LED Driver"
 version = "0.0.0+auto.0"
 readme = "README.rst"
 authors = [
-    {name = "Noel Anderson", email = "noel_anderson@outlook.com"}
+    {name = "Noel Anderson"},
+    {name = "zajili"}
 ]
-urls = {Homepage = "https://github.com/noelanderson/CircuitPython_PCA9955B"}
+urls = {Homepage = "https://github.com/zajili/microPython_PCA9955B"}
 keywords = [
-    "adafruit",
-    "blinka",
-    "circuitpython",
     "micropython",
     "pca9955b",
-    "pca9955b,",
     "LED",
-    "Driver,",
-    "I2C,",
+    "Driver",
+    "I2C",
     "PWM",
     "Controller",
 ]
@@ -40,11 +38,6 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
 ]
-dynamic = ["dependencies", "optional-dependencies"]
 
 [tool.setuptools]
 packages = ["pca9955b"]
-
-[tool.setuptools.dynamic]
-dependencies = {file = ["requirements.txt"]}
-optional-dependencies = {optional = {file = ["optional_requirements.txt"]}}

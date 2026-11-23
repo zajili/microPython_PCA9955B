@@ -1,94 +1,64 @@
 Introduction
 ============
 
-
-.. image:: https://readthedocs.org/projects/circuitpython-pca9955b/badge/?version=latest
-    :target: https://circuitpython-pca9955b.readthedocs.io/
-    :alt: Documentation Status
-
-
-
-.. image:: https://img.shields.io/discord/327254708534116352.svg
-    :target: https://adafru.it/discord
-    :alt: Discord
-
-
-.. image:: https://github.com/noelanderson/CircuitPython_PCA9955B/workflows/Build%20CI/badge.svg
-    :target: https://github.com/noelanderson/CircuitPython_PCA9955B/actions
-    :alt: Build Status
-
-
 .. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
     :target: https://github.com/astral-sh/ruff
-    :alt: Code Style: Ruff
+    :alt: Ruff
 
-CircuitPython helper library for the NXP 16-Channel I²C-Bus Constant-Current LED Driver
+MicroPython helper library for the NXP 16-Channel I²C-Bus Constant-Current LED Driver
+(PCA9955B).
 
+This project is a MicroPython port of
+`CircuitPython_PCA9955B <https://github.com/noelanderson/CircuitPython_PCA9955B>`_
+by Noel Anderson. The public API (``PCA9955``, ``LedChannel``, ``Group``,
+``SubAddress`` ...) is kept as close as possible to the original, so code written
+for the CircuitPython library needs only minor changes.
+
+Differences from the CircuitPython library
+------------------------------------------
+
+* Uses the MicroPython ``machine`` module (``machine.I2C`` / ``machine.Pin``)
+  instead of ``busio`` / ``digitalio`` and Adafruit Bus Device.
+* No dependency on Adafruit CircuitPython, Blinka or ``adafruit_bus_device``.
+* Not distributed through the Adafruit Library Bundle, ``circup`` or PyPI.
+  Copy the package to the board instead (see below).
+* No Sphinx documentation or example scripts. See the usage example below and
+  the docstrings in the source.
+
+Current limitations
+-------------------
+
+* **The I²C bus is currently hard-coded** in ``PCA9955.__init__``
+  (``I2C(1, scl=Pin(3), sda=Pin(2), freq=400_000)``). The ``i2c`` argument is
+  accepted for API compatibility but is not used yet. Edit the pins and bus id
+  in ``pca9955b/pca9955b.py`` to match your board until this is fixed.
+* The ``oe_pin`` and ``reset_pin`` arguments are accepted but not wired up yet,
+  so the ``output_enable`` property and ``reset()`` currently do nothing.
 
 Dependencies
-=============
+============
+
 This driver depends on:
 
-* `Adafruit CircuitPython <https://github.com/adafruit/circuitpython>`_
-* `Bus Device <https://github.com/adafruit/Adafruit_CircuitPython_BusDevice>`_
+* `MicroPython <https://micropython.org/>`_ (uses ``machine`` and ``micropython.const``)
 
-Please ensure all dependencies are available on the CircuitPython filesystem.
-This is easily achieved by downloading
-`the Adafruit library and driver bundle <https://circuitpython.org/libraries>`_
-or individual libraries can be installed using
-`circup <https://github.com/adafruit/circup>`_.
+Tested on MicroPython with an I²C bus at 400 kHz. Please ensure the firmware for
+your board provides ``machine.I2C`` and ``machine.Pin``.
 
-Installing from PyPI
-=====================
-.. note:: This library is not available on PyPI yet. Install documentation is included
-   as a standard element. Stay tuned for PyPI availability!
+Installing
+==========
 
-
-On supported GNU/Linux systems like the Raspberry Pi, you can install the driver locally `from
-PyPI <https://pypi.org/project/circuitpython-pca9955b/>`_.
-To install for current user:
+Clone or download this repository, then copy the ``pca9955b`` folder to the root
+(or ``/lib``) of your board's filesystem, for example with
+`mpremote <https://docs.micropython.org/en/latest/reference/mpremote.html>`_:
 
 .. code-block:: shell
 
-    pip3 install circuitpython-pca9955b
+    git clone https://github.com/zajili/microPython_PCA9955B.git
+    cd microPython_PCA9955B
+    mpremote cp -r pca9955b :
 
-To install system-wide (this may be required in some cases):
-
-.. code-block:: shell
-
-    sudo pip3 install circuitpython-pca9955b
-
-To install in a virtual environment in your current project:
-
-.. code-block:: shell
-
-    mkdir project-name && cd project-name
-    python3 -m venv .venv
-    source .env/bin/activate
-    pip3 install circuitpython-pca9955b
-
-Installing to a Connected CircuitPython Device with Circup
-==========================================================
-
-Make sure that you have ``circup`` installed in your Python environment.
-Install it with the following command if necessary:
-
-.. code-block:: shell
-
-    pip3 install circup
-
-With ``circup`` installed and your CircuitPython device connected use the
-following command to install:
-
-.. code-block:: shell
-
-    circup install pca9955b
-
-Or the following command to update an existing version:
-
-.. code-block:: shell
-
-    circup update
+The folder contains ``__init__.py``, ``pca9955b.py`` and ``pca9955b_groups.py``.
 
 Usage Example
 =============
@@ -96,44 +66,47 @@ Usage Example
 .. code-block:: python
 
     import time
-    import board
-    import busio
-
+    from machine import Pin, I2C
     from pca9955b import PCA9955, LedChannel
-    i2c = busio.I2C(board.SCL, board.SDA)
 
-    ledDriver = PCA9955(i2c, address=0x3F, oe_pin=board.GP10, reset_pin=board.GP11)
-    ledDriver.reset()
-    ledDriver.output_enable = True
+    # NOTE: the bus is currently hard-coded inside the driver (see "Current limitations").
+    i2c = I2C(1, scl=Pin(3), sda=Pin(2), freq=400_000)
 
-    ledDriver.gain = 0xFF
-    ledDriver.brightness = 0x7F  # 50% brightness
+    leds = PCA9955(i2c)  # default address 0x3F
 
-    ledDriver.channels[0].state = LedChannel.ON
-    time.sleep(5)
-    ledDriver.channels[0].state = LedChannel.OFF
-    time.sleep(5)
+    leds.gain = 0xFF        # output current for all channels
+    leds.brightness = 0xFF  # PWM for all channels
 
-    ledDriver.channels[0].state = LedChannel.PWM
-    for i in range(255):
-        ledDriver.channels[0].brightness = i
-        time.sleep(0.02)
+    led = leds.channels[0]
 
+    # Full on / off
+    led.state = LedChannel.ON
+    time.sleep(1)
+    led.state = LedChannel.OFF
+    time.sleep(1)
 
-Documentation
-=============
+    # Individual PWM
+    led.state = LedChannel.PWM
+    for value in range(256):
+        led.brightness = value
+        time.sleep_ms(5)
 
-Class Diagram for library
+Support
+=======
 
-.. figure:: https://raw.githubusercontent.com/noelanderson/CircuitPython_PCA9955B/master/uml/pca9955bClasses.svg
-   :alt: Class Diagram
-
-API documentation for this library can be found on `Read the Docs <https://circuitpython-pca9955b.readthedocs.io/>`_.
-
+Questions, bug reports and feature requests: please open an
+`issue <https://github.com/zajili/microPython_PCA9955B/issues>`_.
 
 Contributing
 ============
 
-Contributions are welcome! Please read our `Code of Conduct
-<https://github.com/noelanderson/CircuitPython_PCA9955B/blob/HEAD/CODE_OF_CONDUCT.md>`_
-before contributing to help this project stay welcoming.
+Contributions are welcome! Please open an
+`issue <https://github.com/zajili/microPython_PCA9955B/issues>`_ or a pull request.
+
+Credits and License
+===================
+
+Original CircuitPython library © 2024-2025 Noel Anderson.
+MicroPython port © 2026 zajili.
+
+Released under the MIT License. See ``LICENSE`` for details.
